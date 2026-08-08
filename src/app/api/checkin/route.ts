@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const staffId = pinData.staff_id;
-    const staffName = pinData.staff.name;
+    const staffName = (pinData.staff as any).name;
 
     let photoUrl = null;
     let storageErrorMsg = null;

@@ -142,7 +142,6 @@ export default function DashboardLayout({
           <Link href="/kiosk" style={{
             padding: '0.75rem 1rem',
             borderRadius: 'var(--radius)',
-            display: 'block',
             fontWeight: 500,
             color: 'var(--foreground)',
             display: 'flex',

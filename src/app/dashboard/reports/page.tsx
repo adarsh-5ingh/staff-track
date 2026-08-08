@@ -101,7 +101,7 @@ export default function ReportsView() {
                 <tr key={log.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '0.5rem 1.5rem' }}>
                     {log.photo_url ? (
-                      <div style={{ position: 'relative', display: 'inline-block', group: 'photo' }}>
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
                         <img 
                           src={log.photo_url} 
                           alt="Check-in" 
