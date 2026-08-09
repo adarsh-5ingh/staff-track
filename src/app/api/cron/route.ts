@@ -85,6 +85,7 @@ export async function GET(request: Request) {
 
     let generatedCount = 0;
     let smsSentCount = 0;
+    let smsErrors: string[] = [];
 
     // 2. Generate a PIN for each eligible staff and save it
     for (const staff of eligibleStaff) {
@@ -92,10 +93,12 @@ export async function GET(request: Request) {
       
       const { error: insertError } = await supabase
         .from('daily_pins')
-        .insert({
+        .upsert({
           staff_id: staff.id,
           pin: pin,
           date: today
+        }, {
+          onConflict: 'staff_id,date'
         });
         
       if (insertError) {
@@ -113,8 +116,9 @@ export async function GET(request: Request) {
             to: staff.phone_number
           });
           smsSentCount++;
-        } catch (smsError) {
+        } catch (smsError: any) {
           console.error(`Failed to send SMS to ${staff.name}:`, smsError);
+          smsErrors.push(`${staff.name} (${staff.phone_number}): ${smsError.message}`);
         }
       }
     }
@@ -122,6 +126,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ 
       success: true, 
       message: `Generated ${generatedCount} PINs. Sent ${smsSentCount} SMS messages.`,
+      errors: smsErrors.length > 0 ? smsErrors : undefined,
       date: today
     });
 

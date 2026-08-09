@@ -130,6 +130,9 @@ export default function DashboardOverview() {
       const data = await res.json();
       if (res.ok) {
         alert(data.message || 'PINs generated successfully.');
+        if (data.errors && data.errors.length > 0) {
+           alert("SMS Sending Errors:\n\n" + data.errors.join("\n\n"));
+        }
       } else {
         alert(data.error || 'Failed to trigger cron');
       }
