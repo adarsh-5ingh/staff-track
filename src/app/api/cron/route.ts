@@ -75,20 +75,35 @@ export async function GET(request: Request) {
        return NextResponse.json({ message: 'All active staff are currently on leave. No PINs generated.' });
     }
 
+    // Check which staff already have a PIN for today
+    const { data: existingPins } = await supabase
+      .from('daily_pins')
+      .select('staff_id')
+      .eq('date', today);
+    const existingPinStaffIds = new Set(existingPins?.map(p => p.staff_id) || []);
+
+    const staffToGenerate = eligibleStaff.filter(staff => !existingPinStaffIds.has(staff.id));
+
+    if (staffToGenerate.length === 0) {
+      return NextResponse.json({ 
+        success: true, 
+        message: 'All staff already have PINs for today! No new PINs were generated (preventing overwrite).',
+        date: today
+      });
+    }
+
     let generatedCount = 0;
 
-    // 2. Generate a PIN for each eligible staff and save it
-    for (const staff of eligibleStaff) {
+    // 2. Generate a PIN only for staff who don't have one yet
+    for (const staff of staffToGenerate) {
       const pin = generatePin();
       
       const { error: insertError } = await supabase
         .from('daily_pins')
-        .upsert({
+        .insert({
           staff_id: staff.id,
           pin: pin,
           date: today
-        }, {
-          onConflict: 'staff_id,date'
         });
         
       if (insertError) {
@@ -100,7 +115,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Generated ${generatedCount} PINs. Ready to send manually!`,
+      message: `Generated ${generatedCount} new PINs. Existing PINs were kept safe.`,
       date: today
     });
 
