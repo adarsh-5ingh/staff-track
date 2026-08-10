@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         const nowIso = now.toISOString();
         const { error: updateError } = await supabase
           .from('time_logs')
-          .update({ check_out_time: nowIso })
+          .update({ check_out_time: nowIso, checkout_photo_url: photoUrl })
           .eq('id', logData.id);
 
         if (updateError) throw updateError;

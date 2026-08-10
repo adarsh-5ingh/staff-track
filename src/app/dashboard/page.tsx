@@ -8,6 +8,7 @@ interface Log {
   check_in_time: string;
   check_out_time: string | null;
   photo_url: string | null;
+  checkout_photo_url: string | null;
   staff: { name: string, shift_start_time?: string };
   date: string;
 }
@@ -29,6 +30,7 @@ export default function DashboardOverview() {
   const [dailyPins, setDailyPins] = useState<DailyPin[]>([]);
   const [loading, setLoading] = useState(true);
   const [triggeringCron, setTriggeringCron] = useState(false);
+  const [viewerImage, setViewerImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -48,7 +50,7 @@ export default function DashboardOverview() {
       // 2. Get today's check-ins
       const { data: logs, count: checkedInCount } = await supabase
         .from('time_logs')
-        .select('id, check_in_time, check_out_time, photo_url, staff(name, shift_start_time), date', { count: 'exact' })
+        .select('id, check_in_time, check_out_time, photo_url, checkout_photo_url, staff(name, shift_start_time), date', { count: 'exact' })
         .eq('date', today)
         .order('check_in_time', { ascending: false });
 
@@ -200,11 +202,26 @@ export default function DashboardOverview() {
             {recentLogs.map((log) => (
               <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  {log.photo_url ? (
-                    <img src={log.photo_url} alt="Check-in photo" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>No Photo</div>
-                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>IN</span>
+                    {log.photo_url ? (
+                      <img src={log.photo_url} onClick={() => setViewerImage(log.photo_url!)} alt="Check-in photo" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', border: '2px solid #10b981' }} />
+                    ) : (
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>N/A</div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>OUT</span>
+                    {log.check_out_time ? (
+                      log.checkout_photo_url ? (
+                        <img src={log.checkout_photo_url} onClick={() => setViewerImage(log.checkout_photo_url!)} alt="Check-out photo" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', border: '2px solid #ef4444' }} />
+                      ) : (
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>N/A</div>
+                      )
+                    ) : (
+                       <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}></div>
+                    )}
+                  </div>
                   <div>
                     <p style={{ fontWeight: 500 }}>{log.staff?.name}</p>
                     <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
@@ -218,6 +235,16 @@ export default function DashboardOverview() {
           </div>
         )}
       </div>
+
+      {viewerImage && (
+        <div 
+          onClick={() => setViewerImage(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}
+        >
+          <img src={viewerImage} alt="Full screen" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '8px', objectFit: 'contain' }} />
+          <button style={{ position: 'absolute', top: '2rem', right: '2rem', color: 'white', fontSize: '1.5rem', background: 'rgba(0,0,0,0.5)', width: '40px', height: '40px', borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        </div>
+      )}
     </div>
   );
 }
