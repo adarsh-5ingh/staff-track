@@ -165,12 +165,12 @@ export default function DashboardOverview() {
                   <p style={{ fontSize: '1.25rem', letterSpacing: '2px', color: 'var(--primary)' }}>{p.pin}</p>
                 </div>
                 {p.is_sent ? (
-                  <button 
-                    disabled
-                    style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '0.5rem 1rem', borderRadius: 'var(--radius)', fontSize: '0.875rem', fontWeight: 600, border: 'none', cursor: 'default' }}
+                  <a 
+                    href={`sms:${p.staff?.phone_number}?body=Hi ${p.staff?.name}, your Staff Track check-in PIN for today is: ${p.pin}`}
+                    style={{ textDecoration: 'none', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '0.5rem 1rem', borderRadius: 'var(--radius)', fontSize: '0.875rem', fontWeight: 600, border: 'none', display: 'inline-block', textAlign: 'center' }}
                   >
-                    Sent ✅
-                  </button>
+                    Sent ✅ (Resend)
+                  </a>
                 ) : (
                   <a 
                     href={`sms:${p.staff?.phone_number}?body=Hi ${p.staff?.name}, your Staff Track check-in PIN for today is: ${p.pin}`}
