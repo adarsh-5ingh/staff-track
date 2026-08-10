@@ -8,7 +8,7 @@ interface TimeLog {
   check_in_time: string;
   check_out_time: string | null;
   photo_url: string | null;
-  staff: { name: string };
+  staff: { name: string, shift_start_time?: string };
 }
 
 export default function ReportsView() {
@@ -16,30 +16,13 @@ export default function ReportsView() {
   const [dateStr, setDateStr] = useState(today);
   const [logs, setLogs] = useState<TimeLog[]>([]);
   const [loading, setLoading] = useState(false);
-  const [shiftStart, setShiftStart] = useState('09:00:00'); // Default
-
-  useEffect(() => {
-    // Fetch Organization's shift start time
-    const fetchOrgSettings = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { data: admin } = await supabase.from('admins').select('organization_id').eq('id', session.user.id).single();
-      if (admin) {
-        const { data: org } = await supabase.from('organizations').select('shift_start_time').eq('id', admin.organization_id).single();
-        if (org && org.shift_start_time) {
-          setShiftStart(org.shift_start_time);
-        }
-      }
-    };
-    fetchOrgSettings();
-  }, []);
 
   useEffect(() => {
     const fetchLogs = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('time_logs')
-        .select('id, check_in_time, check_out_time, photo_url, staff(name)')
+        .select('id, check_in_time, check_out_time, photo_url, staff(name, shift_start_time)')
         .eq('date', dateStr)
         .order('check_in_time', { ascending: false });
 
@@ -54,15 +37,15 @@ export default function ReportsView() {
 
   const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-  const isLate = (checkInIso: string) => {
+  const isLate = (checkInIso: string, staffShiftStart: string = '09:00:00') => {
     // Compare time strings simply
     const checkInTime = new Date(checkInIso).toTimeString().split(' ')[0]; // HH:MM:SS
-    return checkInTime > shiftStart;
+    return checkInTime > staffShiftStart;
   };
 
   return (
     <div>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="responsive-header">
         <div>
           <h1 style={{ fontSize: '2rem', fontWeight: 600 }}>Historical Reports</h1>
           <p style={{ color: 'var(--muted-foreground)' }}>View check-in logs and photos for any specific date.</p>
@@ -120,7 +103,7 @@ export default function ReportsView() {
                     {log.check_out_time ? formatTime(log.check_out_time) : '--'}
                   </td>
                   <td style={{ padding: '1rem 1.5rem' }}>
-                    {isLate(log.check_in_time) ? (
+                    {isLate(log.check_in_time, log.staff.shift_start_time) ? (
                       <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>Late</span>
                     ) : (
                       <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>On Time</span>

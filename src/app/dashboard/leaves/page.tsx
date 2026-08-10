@@ -85,6 +85,16 @@ export default function LeavesManagement() {
     setSaving(false);
   };
 
+  const handleDeleteLeave = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this leave record?')) return;
+    const { error } = await supabase.from('leaves').delete().eq('id', id);
+    if (error) {
+      alert(error.message);
+    } else {
+      fetchData();
+    }
+  };
+
   const isCurrentlyOnLeave = (start: string, end: string) => {
     const today = new Date().toISOString().split('T')[0];
     return today >= start && today <= end;
@@ -92,7 +102,7 @@ export default function LeavesManagement() {
 
   return (
     <div>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <header className="responsive-header">
         <div>
           <h1 style={{ fontSize: '2rem', fontWeight: 600 }}>Leave Management</h1>
           <p style={{ color: 'var(--muted-foreground)' }}>Track and manage staff absences.</p>
@@ -110,6 +120,7 @@ export default function LeavesManagement() {
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Duration</th>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Reason</th>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Status</th>
+              <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -131,6 +142,9 @@ export default function LeavesManagement() {
                       <span style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>Upcoming / Past</span>
                     )}
                   </td>
+                  <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                    <button onClick={() => handleDeleteLeave(leave.id)} style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: 500 }}>Delete</button>
+                  </td>
                 </tr>
               );
             })}
@@ -139,8 +153,8 @@ export default function LeavesManagement() {
       </div>
 
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div className="glass-panel" style={{ backgroundColor: 'var(--background)', padding: '2rem', width: '100%', maxWidth: '400px', borderRadius: 'var(--radius)' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
+          <div className="glass-panel modal-content">
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>Record Staff Leave</h2>
             <form onSubmit={handleAddLeave}>
               <div style={{ marginBottom: '1rem' }}>
@@ -151,7 +165,7 @@ export default function LeavesManagement() {
                   ))}
                 </select>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="responsive-grid-2" style={{ marginBottom: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Start Date</label>
                   <input type="date" className="input-field" value={startDate} onChange={e => setStartDate(e.target.value)} required />

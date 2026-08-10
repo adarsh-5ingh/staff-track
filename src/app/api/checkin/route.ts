@@ -70,10 +70,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'System error: Could not verify previous check-ins.' }, { status: 500 });
     }
 
-    const formatTime = (isoString: string) => {
-      return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    };
-
     if (logData) {
       if (logData.check_out_time) {
         // They already completed a shift today (Check-in and Check-out are both done)
@@ -99,7 +95,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ 
           success: true, 
           action: 'checkout', 
-          message: `Goodbye, ${staffName}! Checked out at ${formatTime(nowIso)}`,
+          message: `Goodbye, ${staffName}! Checked out at`,
+          timestamp: nowIso,
           photoError: storageErrorMsg
         });
       }
@@ -120,8 +117,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true, 
       action: 'checkin', 
-      message: `Welcome, ${staffName}! Checked in at ${formatTime(now)}`,
-        photoError: storageErrorMsg
+      message: `Welcome, ${staffName}! Checked in at`,
+      timestamp: now,
+      photoError: storageErrorMsg
     });
 
   } catch (error) {

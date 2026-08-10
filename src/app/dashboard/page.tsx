@@ -8,7 +8,7 @@ interface Log {
   check_in_time: string;
   check_out_time: string | null;
   photo_url: string | null;
-  staff: { name: string };
+  staff: { name: string, shift_start_time?: string };
   date: string;
 }
 
@@ -17,9 +17,7 @@ export default function DashboardOverview() {
     totalStaff: 0, 
     checkedInToday: 0, 
     absent: 0,
-    lateToday: 0,
-    weeklyAttendance: 0,
-    avgHoursToday: '0h 0m'
+    lateToday: 0
   });
   const [recentLogs, setRecentLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,17 +32,7 @@ export default function DashboardOverview() {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // 1. Get total active staff and Organization shift_start_time
-      const { data: { session } } = await supabase.auth.getSession();
-      let shiftStart = '09:00:00';
-      if (session) {
-        const { data: admin } = await supabase.from('admins').select('organization_id').eq('id', session.user.id).single();
-        if (admin) {
-          const { data: org } = await supabase.from('organizations').select('shift_start_time').eq('id', admin.organization_id).single();
-          if (org && org.shift_start_time) shiftStart = org.shift_start_time;
-        }
-      }
-
+      // 1. Get total active staff
       const { count: staffCount } = await supabase
         .from('staff')
         .select('*', { count: 'exact', head: true })
@@ -53,59 +41,26 @@ export default function DashboardOverview() {
       // 2. Get today's check-ins
       const { data: logs, count: checkedInCount } = await supabase
         .from('time_logs')
-        .select('id, check_in_time, check_out_time, photo_url, staff(name), date', { count: 'exact' })
+        .select('id, check_in_time, check_out_time, photo_url, staff(name, shift_start_time), date', { count: 'exact' })
         .eq('date', today)
         .order('check_in_time', { ascending: false });
 
       const todayLogs = (logs as any) || [];
 
-      // Calculate Late and Hours
+      // Calculate Late
       let lateCount = 0;
-      let totalMinutes = 0;
-      let completedShifts = 0;
 
       todayLogs.forEach((log: Log) => {
         const timeStr = new Date(log.check_in_time).toTimeString().split(' ')[0];
-        if (timeStr > shiftStart) lateCount++;
-
-        if (log.check_out_time) {
-          const inDate = new Date(log.check_in_time).getTime();
-          const outDate = new Date(log.check_out_time).getTime();
-          totalMinutes += (outDate - inDate) / 1000 / 60;
-          completedShifts++;
-        }
+        const staffShiftStart = log.staff?.shift_start_time || '09:00:00';
+        if (timeStr > staffShiftStart) lateCount++;
       });
-
-      const avgMins = completedShifts > 0 ? Math.round(totalMinutes / completedShifts) : 0;
-      const avgHoursStr = `${Math.floor(avgMins / 60)}h ${avgMins % 60}m`;
-
-      // 3. Weekly Attendance Rate (Last 7 days)
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekAgoStr = weekAgo.toISOString().split('T')[0];
-
-      const { data: weeklyLogs } = await supabase
-        .from('time_logs')
-        .select('staff_id, date')
-        .gte('date', weekAgoStr)
-        .lte('date', today);
-
-      let weeklyRate = 0;
-      if (staffCount && weeklyLogs) {
-        // Find unique staff checkins per day over the last 7 days.
-        // Assuming 5 working days normally, but let's just do a simple average per day vs total staff.
-        // Actually, let's just count total unique checkins / (totalStaff * 7).
-        const maxPossibleCheckins = staffCount * 7;
-        weeklyRate = maxPossibleCheckins > 0 ? Math.round((weeklyLogs.length / maxPossibleCheckins) * 100) : 0;
-      }
 
       setStats({
         totalStaff: staffCount || 0,
         checkedInToday: checkedInCount || 0,
         absent: (staffCount || 0) - (checkedInCount || 0),
-        lateToday: lateCount,
-        weeklyAttendance: weeklyRate,
-        avgHoursToday: avgHoursStr
+        lateToday: lateCount
       });
       
       setRecentLogs(todayLogs);
@@ -146,7 +101,7 @@ export default function DashboardOverview() {
 
   return (
     <div>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="responsive-header">
         <div>
           <h1 style={{ fontSize: '2rem', fontWeight: 600 }}>Overview</h1>
           <p style={{ color: 'var(--muted-foreground)' }}>Monitor today's check-ins and activity.</p>
@@ -164,14 +119,6 @@ export default function DashboardOverview() {
         <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: 'var(--background)' }}>
           <h3 style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Checked In Today</h3>
           <p style={{ fontSize: '2rem', fontWeight: 600 }}>{stats.checkedInToday} <span style={{fontSize: '1rem', color: '#ef4444', fontWeight: 400}}>({stats.lateToday} Late)</span></p>
-        </div>
-        <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: 'var(--background)' }}>
-          <h3 style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Weekly Attendance</h3>
-          <p style={{ fontSize: '2rem', fontWeight: 600 }}>{stats.weeklyAttendance}%</p>
-        </div>
-        <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: 'var(--background)' }}>
-          <h3 style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Avg. Hours (Today)</h3>
-          <p style={{ fontSize: '2rem', fontWeight: 600 }}>{stats.avgHoursToday}</p>
         </div>
       </div>
 

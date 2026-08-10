@@ -79,12 +79,19 @@ export default function Kiosk() {
         setMessage({ text: data.error || 'Failed to verify PIN', type: 'error' });
       } else {
         let msg = data.message || 'Success!';
+        
+        // Format the time on the device (so it uses local timezone instead of Vercel's UTC timezone)
+        if (data.timestamp) {
+           const localTime = new Date(data.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+           msg += ` ${localTime}`;
+        }
+        
         if (data.photoError) {
-           msg += ` (Photo Upload Failed: ${data.photoError})`;
+           msg += `\n(Photo Upload Failed: ${data.photoError})`;
         }
         setMessage({ text: msg, type: 'success' });
         setPin(''); // Clear on success
-        setTimeout(() => setMessage(null), 4000); // Clear message after 4s
+        setTimeout(() => setMessage(null), 2000); // Clear message after 2s
       }
     } catch (err) {
       setMessage({ text: 'Network error. Please try again.', type: 'error' });
@@ -125,9 +132,19 @@ export default function Kiosk() {
       </a>
 
       <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Live Camera Preview */}
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '50%',
+          overflow: 'hidden',
+          marginBottom: '1rem',
+          border: '2px solid var(--border)',
+          backgroundColor: 'var(--muted)'
+        }}>
+          <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
         
-        {/* Hidden Video for Photo Capture */}
-        <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         {message?.type === 'success' ? (
