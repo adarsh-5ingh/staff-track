@@ -64,7 +64,7 @@ export default function ReportsView() {
       </header>
 
       <div className="glass-panel table-responsive" style={{ backgroundColor: 'var(--background)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+        <table className="mobile-card-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Photo</th>
@@ -76,33 +76,26 @@ export default function ReportsView() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ padding: '1.5rem', textAlign: 'center' }}>Loading...</td></tr>
+               <tr><td colSpan={5} style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>Loading reports...</td></tr>
             ) : logs.length === 0 ? (
-              <tr><td colSpan={5} style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>No check-ins found for this date.</td></tr>
-            ) : (
-              logs.map((log) => (
+               <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>No check-ins found for this date.</td></tr>
+            ) : logs.map((log) => (
                 <tr key={log.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '0.5rem 1.5rem' }}>
+                  <td data-label="Photo" style={{ padding: '1rem 1.5rem' }}>
                     {log.photo_url ? (
-                      <div style={{ position: 'relative', display: 'inline-block' }}>
-                        <img 
-                          src={log.photo_url} 
-                          alt="Check-in" 
-                          style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', cursor: 'pointer', transition: 'transform 0.2s' }} 
-                          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(2.5)'}
-                          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        />
-                      </div>
+                      <img src={log.photo_url} alt="Check-in" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', color: 'var(--muted-foreground)' }}>N/A</div>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>No Photo</div>
                     )}
                   </td>
-                  <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{log.staff.name}</td>
-                  <td style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>{formatTime(log.check_in_time)}</td>
-                  <td style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
+                  <td data-label="Name" style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{log.staff?.name}</td>
+                  <td data-label="Check-in" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
+                    {formatTime(log.check_in_time)}
+                  </td>
+                  <td data-label="Check-out" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
                     {log.check_out_time ? formatTime(log.check_out_time) : '--'}
                   </td>
-                  <td style={{ padding: '1rem 1.5rem' }}>
+                  <td data-label="Status" style={{ padding: '1rem 1.5rem' }}>
                     {isLate(log.check_in_time, log.staff.shift_start_time) ? (
                       <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>Late</span>
                     ) : (
@@ -110,8 +103,7 @@ export default function ReportsView() {
                     )}
                   </td>
                 </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>

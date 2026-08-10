@@ -1,13 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
-import twilio from 'twilio';
-
-// Twilio Client
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const fromPhone = process.env.TWILIO_PHONE_NUMBER;
-
-const twilioClient = (accountSid && authToken) ? twilio(accountSid, authToken) : null;
 
 // Helper to generate a 6-digit PIN
 const generatePin = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -84,8 +76,6 @@ export async function GET(request: Request) {
     }
 
     let generatedCount = 0;
-    let smsSentCount = 0;
-    let smsErrors: string[] = [];
 
     // 2. Generate a PIN for each eligible staff and save it
     for (const staff of eligibleStaff) {
@@ -106,27 +96,11 @@ export async function GET(request: Request) {
         continue;
       }
       generatedCount++;
-
-      // 3. Send SMS via Twilio
-      if (twilioClient && fromPhone) {
-        try {
-          await twilioClient.messages.create({
-            body: `Hi ${staff.name}, your Staff Track check-in PIN for today is: ${pin}`,
-            from: fromPhone,
-            to: staff.phone_number
-          });
-          smsSentCount++;
-        } catch (smsError: any) {
-          console.error(`Failed to send SMS to ${staff.name}:`, smsError);
-          smsErrors.push(`${staff.name} (${staff.phone_number}): ${smsError.message}`);
-        }
-      }
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: `Generated ${generatedCount} PINs. Sent ${smsSentCount} SMS messages.`,
-      errors: smsErrors.length > 0 ? smsErrors : undefined,
+      message: `Generated ${generatedCount} PINs. Ready to send manually!`,
       date: today
     });
 

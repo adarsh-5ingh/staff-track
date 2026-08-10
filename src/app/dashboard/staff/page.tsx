@@ -136,7 +136,7 @@ export default function StaffManagement() {
       </header>
 
       <div className="glass-panel table-responsive" style={{ backgroundColor: 'var(--background)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+        <table className="mobile-card-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Name</th>
@@ -153,12 +153,12 @@ export default function StaffManagement() {
                <tr><td colSpan={5} style={{ padding: '1rem 1.5rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>No staff members added yet.</td></tr>
             ) : staffList.map((staff) => (
               <tr key={staff.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{staff.name}</td>
-                <td style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>{staff.phone_number}</td>
-                <td style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
+                <td data-label="Name" style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{staff.name}</td>
+                <td data-label="Phone" className="col-half" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>{staff.phone_number}</td>
+                <td data-label="Shift Start" className="col-half" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
                   {new Date(`1970-01-01T${staff.shift_start_time}:00`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                 </td>
-                <td style={{ padding: '1rem 1.5rem' }}>
+                <td data-label="Status" style={{ padding: '1rem 1.5rem' }}>
                   <span style={{ 
                     padding: '0.25rem 0.75rem', 
                     borderRadius: '99px', 
@@ -170,9 +170,11 @@ export default function StaffManagement() {
                     {staff.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                  <button onClick={() => openEditModal(staff)} style={{ color: 'var(--foreground)', fontSize: '0.875rem', fontWeight: 500, marginRight: '1rem' }}>Edit</button>
-                  <button onClick={() => handleDeleteStaff(staff.id, staff.name)} style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: 500 }}>Delete</button>
+                <td className="no-label" style={{ padding: '1rem 1.5rem', width: '100%' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+                    <button onClick={() => openEditModal(staff)} style={{ flex: 1, backgroundColor: 'var(--muted)', padding: '0.5rem', borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.875rem', fontWeight: 500, textAlign: 'center' }}>Edit</button>
+                    <button onClick={() => handleDeleteStaff(staff.id, staff.name)} style={{ flex: 1, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: 'var(--radius)', color: '#ef4444', fontSize: '0.875rem', fontWeight: 500, textAlign: 'center' }}>Delete</button>
+                  </div>
                 </td>
               </tr>
             ))}

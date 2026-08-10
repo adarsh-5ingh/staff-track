@@ -113,7 +113,7 @@ export default function LeavesManagement() {
       </header>
 
       <div className="glass-panel table-responsive" style={{ backgroundColor: 'var(--background)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+        <table className="mobile-card-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Name</th>
@@ -125,29 +125,30 @@ export default function LeavesManagement() {
           </thead>
           <tbody>
             {loading ? (
-               <tr><td colSpan={4} style={{ padding: '1.5rem', textAlign: 'center' }}>Loading leaves...</td></tr>
+               <tr><td colSpan={5} style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>Loading leaves...</td></tr>
             ) : leaves.length === 0 ? (
-               <tr><td colSpan={4} style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>No leaves recorded yet.</td></tr>
-            ) : leaves.map((leave) => {
-              const active = isCurrentlyOnLeave(leave.start_date, leave.end_date);
-              return (
-                <tr key={leave.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{leave.staff.name}</td>
-                  <td style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>{leave.start_date} to {leave.end_date}</td>
-                  <td style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>{leave.reason || '--'}</td>
-                  <td style={{ padding: '1rem 1.5rem' }}>
-                    {active ? (
-                      <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>Currently on Leave</span>
+               <tr><td colSpan={5} style={{ padding: '1rem 1.5rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>No leave records found.</td></tr>
+            ) : leaves.map((leave) => (
+              <tr key={leave.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td data-label="Name" style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{leave.staff?.name}</td>
+                  <td data-label="Duration" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
+                    {leave.start_date} to {leave.end_date}
+                  </td>
+                  <td data-label="Reason" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
+                    {leave.reason}
+                  </td>
+                  <td data-label="Status" style={{ padding: '1rem 1.5rem' }}>
+                    {isCurrentlyOnLeave(leave.start_date, leave.end_date) ? (
+                      <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>Active Now</span>
                     ) : (
                       <span style={{ backgroundColor: 'var(--muted)', color: 'var(--muted-foreground)', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>Upcoming / Past</span>
                     )}
                   </td>
-                  <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                    <button onClick={() => handleDeleteLeave(leave.id)} style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: 500 }}>Delete</button>
+                  <td className="no-label" style={{ padding: '1rem 1.5rem', width: '100%' }}>
+                    <button onClick={() => handleDeleteLeave(leave.id)} style={{ width: '100%', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: 'var(--radius)', color: '#ef4444', fontSize: '0.875rem', fontWeight: 500, textAlign: 'center' }}>Delete Leave</button>
                   </td>
                 </tr>
-              );
-            })}
+            ))}
           </tbody>
         </table>
       </div>

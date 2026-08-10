@@ -12,6 +12,12 @@ interface Log {
   date: string;
 }
 
+interface DailyPin {
+  pin: string;
+  is_sent: boolean;
+  staff: { name: string; phone_number: string };
+}
+
 export default function DashboardOverview() {
   const [stats, setStats] = useState({ 
     totalStaff: 0, 
@@ -20,6 +26,7 @@ export default function DashboardOverview() {
     lateToday: 0
   });
   const [recentLogs, setRecentLogs] = useState<Log[]>([]);
+  const [dailyPins, setDailyPins] = useState<DailyPin[]>([]);
   const [loading, setLoading] = useState(true);
   const [triggeringCron, setTriggeringCron] = useState(false);
 
@@ -64,6 +71,14 @@ export default function DashboardOverview() {
       });
       
       setRecentLogs(todayLogs);
+
+      // 3. Get today's PINs
+      const { data: pinsData } = await supabase
+        .from('daily_pins')
+        .select('pin, is_sent, staff(name, phone_number)')
+        .eq('date', today);
+      
+      setDailyPins(pinsData as any || []);
     } catch (err) {
       console.error("Failed to fetch dashboard data", err);
     } finally {
@@ -85,9 +100,7 @@ export default function DashboardOverview() {
       const data = await res.json();
       if (res.ok) {
         alert(data.message || 'PINs generated successfully.');
-        if (data.errors && data.errors.length > 0) {
-           alert("SMS Sending Errors:\n\n" + data.errors.join("\n\n"));
-        }
+        fetchData(); // Refresh to show the new PINs
       } else {
         alert(data.error || 'Failed to trigger cron');
       }
@@ -95,6 +108,23 @@ export default function DashboardOverview() {
       alert('Network error while triggering cron.');
     }
     setTriggeringCron(false);
+  };
+
+  const handleMarkAsSent = async (pin: string) => {
+    // Optimistic UI update
+    setDailyPins(prev => prev.map(p => p.pin === pin ? { ...p, is_sent: true } : p));
+    
+    // DB update
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await supabase
+        .from('daily_pins')
+        .update({ is_sent: true })
+        .eq('pin', pin)
+        .eq('date', today);
+    } catch (err) {
+      console.error('Failed to mark PIN as sent:', err);
+    }
   };
 
   if (loading) return <div>Loading...</div>;
@@ -107,7 +137,7 @@ export default function DashboardOverview() {
           <p style={{ color: 'var(--muted-foreground)' }}>Monitor today's check-ins and activity.</p>
         </div>
         <button className="btn-primary" onClick={handleTestCron} disabled={triggeringCron}>
-          {triggeringCron ? 'Sending...' : 'Test: Generate PINs & Send SMS'}
+          {triggeringCron ? 'Generating...' : 'Generate Daily PINs'}
         </button>
       </header>
 
@@ -120,6 +150,41 @@ export default function DashboardOverview() {
           <h3 style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Checked In Today</h3>
           <p style={{ fontSize: '2rem', fontWeight: 600 }}>{stats.checkedInToday} <span style={{fontSize: '1rem', color: '#ef4444', fontWeight: 400}}>({stats.lateToday} Late)</span></p>
         </div>
+      </div>
+
+      <div className="glass-panel" style={{ backgroundColor: 'var(--background)', padding: '1.5rem', marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>Today's PINs (Manual SMS)</h2>
+        {dailyPins.length === 0 ? (
+          <p style={{ color: 'var(--muted-foreground)' }}>No PINs generated for today yet. Click "Generate Daily PINs" above.</p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+            {dailyPins.map((p, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'var(--muted)', borderRadius: 'var(--radius)' }}>
+                <div>
+                  <p style={{ fontWeight: 600 }}>{p.staff?.name}</p>
+                  <p style={{ fontSize: '1.25rem', letterSpacing: '2px', color: 'var(--primary)' }}>{p.pin}</p>
+                </div>
+                {p.is_sent ? (
+                  <button 
+                    disabled
+                    style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '0.5rem 1rem', borderRadius: 'var(--radius)', fontSize: '0.875rem', fontWeight: 600, border: 'none', cursor: 'default' }}
+                  >
+                    Sent ✅
+                  </button>
+                ) : (
+                  <a 
+                    href={`sms:${p.staff?.phone_number}?body=Hi ${p.staff?.name}, your Staff Track check-in PIN for today is: ${p.pin}`}
+                    className="btn-primary" 
+                    onClick={() => handleMarkAsSent(p.pin)}
+                    style={{ textDecoration: 'none', padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                  >
+                    Send SMS
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="glass-panel" style={{ backgroundColor: 'var(--background)', padding: '1.5rem' }}>
