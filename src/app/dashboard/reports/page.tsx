@@ -9,7 +9,7 @@ interface TimeLog {
   check_out_time: string | null;
   photo_url: string | null;
   checkout_photo_url: string | null;
-  staff: { name: string, shift_start_time?: string };
+  staff: { name: string, target_duration_minutes?: number };
 }
 
 export default function ReportsView() {
@@ -24,7 +24,7 @@ export default function ReportsView() {
       setLoading(true);
       const { data, error } = await supabase
         .from('time_logs')
-        .select('id, check_in_time, check_out_time, photo_url, checkout_photo_url, staff(name, shift_start_time)')
+        .select('id, check_in_time, check_out_time, photo_url, checkout_photo_url, staff(name, target_duration_minutes)')
         .eq('date', dateStr)
         .order('check_in_time', { ascending: false });
 
@@ -39,10 +39,35 @@ export default function ReportsView() {
 
   const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-  const isLate = (checkInIso: string, staffShiftStart: string = '09:00:00') => {
-    // Compare time strings simply
-    const checkInTime = new Date(checkInIso).toTimeString().split(' ')[0]; // HH:MM:SS
-    return checkInTime > staffShiftStart;
+  const getDurationString = (mins: number) => {
+    const h = Math.floor(Math.abs(mins) / 60);
+    const m = Math.abs(mins) % 60;
+    return `${h}h ${m}m`;
+  };
+
+  const handleExportCSV = () => {
+    let csv = "Name,Check-in,Check-out,Target Hours,Hours Worked,Variance\n";
+    logs.forEach(log => {
+      const targetMins = log.staff?.target_duration_minutes || 480;
+      let workedStr = "In Progress";
+      let varianceStr = "";
+      if (log.check_out_time) {
+        const diffMins = Math.floor((new Date(log.check_out_time).getTime() - new Date(log.check_in_time).getTime()) / 60000);
+        workedStr = getDurationString(diffMins);
+        
+        const varianceMins = diffMins - targetMins;
+        varianceStr = varianceMins >= 0 ? `+${getDurationString(varianceMins)}` : `-${getDurationString(varianceMins)}`;
+      }
+      csv += `"${log.staff?.name}","${formatTime(log.check_in_time)}","${log.check_out_time ? formatTime(log.check_out_time) : '--'}","${(targetMins/60).toFixed(1)}h","${workedStr}","${varianceStr}"\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `staff_report_${dateStr}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -62,6 +87,9 @@ export default function ReportsView() {
             style={{ width: 'auto', padding: '0.5rem 1rem' }}
             max={today}
           />
+          <button onClick={handleExportCSV} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
+            Export CSV
+          </button>
         </div>
       </header>
 
@@ -73,7 +101,7 @@ export default function ReportsView() {
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Name</th>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Check-in</th>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Check-out</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Status</th>
+              <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Time Worked</th>
             </tr>
           </thead>
           <tbody>
@@ -112,11 +140,23 @@ export default function ReportsView() {
                   <td data-label="Check-out" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
                     {log.check_out_time ? formatTime(log.check_out_time) : '--'}
                   </td>
-                  <td data-label="Status" style={{ padding: '1rem 1.5rem' }}>
-                    {isLate(log.check_in_time, log.staff.shift_start_time) ? (
-                      <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>Late</span>
-                    ) : (
-                      <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>On Time</span>
+                  <td data-label="Time Worked" style={{ padding: '1rem 1.5rem' }}>
+                    {log.check_out_time ? (() => {
+                      const targetMins = log.staff?.target_duration_minutes || 480;
+                      const diffMins = Math.floor((new Date(log.check_out_time).getTime() - new Date(log.check_in_time).getTime()) / 60000);
+                      const varianceMins = diffMins - targetMins;
+                      const isPositive = varianceMins >= 0;
+                      
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{getDurationString(diffMins)}</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isPositive ? '#10b981' : '#ef4444' }}>
+                            ({isPositive ? '+' : '-'}{getDurationString(varianceMins)})
+                          </span>
+                        </div>
+                      );
+                    })() : (
+                      <span style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 600 }}>In Progress</span>
                     )}
                   </td>
                 </tr>

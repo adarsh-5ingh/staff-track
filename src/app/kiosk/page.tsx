@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import styles from './kiosk.module.css';
 
 export default function Kiosk() {
   const [pin, setPin] = useState('');
@@ -72,22 +73,22 @@ export default function Kiosk() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin, photoBase64 }),
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
         setMessage({ text: data.error || 'Failed to verify PIN', type: 'error' });
       } else {
         let msg = data.message || 'Success!';
-        
+
         // Format the time on the device (so it uses local timezone instead of Vercel's UTC timezone)
         if (data.timestamp) {
-           const localTime = new Date(data.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-           msg += ` ${localTime}`;
+          const localTime = new Date(data.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+          msg += ` ${localTime}`;
         }
-        
+
         if (data.photoError) {
-           msg += `\n(Photo Upload Failed: ${data.photoError})`;
+          msg += `\n(Photo Upload Failed: ${data.photoError})`;
         }
         setMessage({ text: msg, type: 'success' });
         setPin(''); // Clear on success
@@ -101,191 +102,95 @@ export default function Kiosk() {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100dvh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      padding: '1rem',
-      backgroundColor: 'var(--background)',
-      overflow: 'hidden',
-      position: 'relative'
-    }}>
-      
-      <a href="/dashboard" style={{ 
-        position: 'absolute', 
-        top: '1.5rem', 
-        right: '1.5rem', 
-        color: 'var(--muted-foreground)', 
-        textDecoration: 'none', 
-        fontSize: '0.875rem',
-        fontWeight: 500,
-        opacity: 0.7,
-        transition: 'opacity 0.2s',
-        zIndex: 10
-      }}
-      onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
-      onMouseOut={(e) => e.currentTarget.style.opacity = '0.7'}
-      >
-        Admin Dashboard
+    <div className={styles.kioskContainer}>
+      <a href="/dashboard" className={styles.adminLink} title="Admin Dashboard" aria-label="Admin Dashboard">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ width: '20px', height: '20px' }}
+        >
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
       </a>
 
-      <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Live Camera Preview */}
-        <div style={{
-          width: '64px',
-          height: '64px',
-          borderRadius: '50%',
-          overflow: 'hidden',
-          marginBottom: '1rem',
-          border: '2px solid var(--border)',
-          backgroundColor: 'var(--muted)'
-        }}>
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
-        
+      <div className={styles.kioskCard}>
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         {message?.type === 'success' ? (
-          <div style={{ 
-            flex: 1, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            textAlign: 'center',
-            minHeight: '400px'
-          }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              color: '#10b981',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '3rem',
-              marginBottom: '1.5rem'
-            }}>
-              ✓
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem', lineHeight: 1.4 }}>{message.text}</h2>
+          <div className={styles.successContainer}>
+            <div className={styles.successIcon}>✓</div>
+            <h2 className={styles.successTitle}>{message.text}</h2>
           </div>
         ) : (
           <>
-            <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: '0.25rem', textAlign: 'center' }}>Check-in</h1>
-            <p style={{ color: 'var(--muted-foreground)', marginBottom: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-              Enter your 6-digit PIN.
-            </p>
-
-            {/* Error Message Banner */}
-            <div style={{ height: '24px', marginBottom: '0.5rem', width: '100%', textAlign: 'center' }}>
-              {message?.type === 'error' && (
-                <span style={{ 
-                  color: '#ef4444', 
-                  fontWeight: 500,
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '99px',
-                  fontSize: '0.75rem'
-                }}>
-                  {message.text}
-                </span>
-              )}
+            <div className={styles.cameraSection}>
+              <div className={styles.cameraFrame}>
+                <video ref={videoRef} autoPlay playsInline muted className={styles.videoElement} />
+              </div>
+              <div className={styles.cameraStatus}>
+                <span className={styles.cameraIndicator} />
+                <span>Camera Active</span>
+              </div>
             </div>
 
-            {/* PIN Display */}
-            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              {[0, 1, 2, 3, 4, 5].map((index) => (
-                <div key={index} style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: index < pin.length ? 'var(--foreground)' : 'var(--muted)',
-                  transition: 'background-color 0.2s ease, transform 0.2s ease',
-                  transform: index < pin.length ? 'scale(1.1)' : 'scale(1)',
-                  boxShadow: index < pin.length ? '0 0 10px rgba(0,0,0,0.1)' : 'none'
-                }} />
-              ))}
-            </div>
+            <div className={styles.entrySection}>
+              <h1 className={styles.title}>Check-in</h1>
+              <p className={styles.subtitle}>Enter your 6-digit PIN</p>
 
-            {/* Dial Pad Grid */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(3, 1fr)', 
-              gap: '1rem',
-              width: '100%',
-              marginBottom: '1rem'
-            }}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                <button key={num} onClick={() => handleNumberClick(num.toString())} style={{
-                  aspectRatio: '1',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--background)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--foreground)',
-                  fontSize: '2rem',
-                  fontWeight: 400,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.1s ease',
-                  padding: 0
-                }}
-                onMouseDown={(e) => e.currentTarget.style.backgroundColor = 'var(--muted)'}
-                onMouseUp={(e) => e.currentTarget.style.backgroundColor = 'var(--background)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--background)'}
-                >
-                  {num}
+              {/* Error Message Banner */}
+              <div className={styles.errorBanner}>
+                {message?.type === 'error' && (
+                  <span className={styles.errorMessage}>{message.text}</span>
+                )}
+              </div>
+
+              {/* PIN Display */}
+              <div className={styles.pinDisplay}>
+                {[0, 1, 2, 3, 4, 5].map((index) => (
+                  <div
+                    key={index}
+                    className={`${styles.pinDot} ${index < pin.length ? styles.pinDotActive : ''}`}
+                  />
+                ))}
+              </div>
+
+              {/* Dial Pad Grid */}
+              <div className={styles.keypadGrid}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => handleNumberClick(num.toString())}
+                    className={styles.keypadBtn}
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button onClick={handleClear} className={styles.textBtn}>
+                  Clear
                 </button>
-              ))}
-              <button onClick={handleClear} style={{
-                fontSize: '1.125rem', fontWeight: 500, color: 'var(--muted-foreground)'
-              }}>Clear</button>
-              
-              <button onClick={() => handleNumberClick('0')} style={{
-                  aspectRatio: '1',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--background)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--foreground)',
-                  fontSize: '2rem',
-                  fontWeight: 400,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.1s ease',
-                  padding: 0
-              }}>
-                0
-              </button>
-              
-              <button onClick={handleDelete} style={{
-                fontSize: '1.125rem', fontWeight: 500, color: 'var(--muted-foreground)'
-              }}>Delete</button>
-            </div>
+                <button onClick={() => handleNumberClick('0')} className={styles.keypadBtn}>
+                  0
+                </button>
+                <button onClick={handleDelete} className={styles.textBtn}>
+                  Delete
+                </button>
+              </div>
 
-            {/* Submit Button */}
-            <button 
-              className="btn-primary" 
-              onClick={handleSubmit} 
-              disabled={pin.length !== 6 || loading}
-              style={{ 
-                width: '100%', 
-                padding: '1rem', 
-                fontSize: '1.25rem',
-                opacity: pin.length === 6 ? 1 : 0.5,
-                cursor: pin.length === 6 ? 'pointer' : 'not-allowed',
-                borderRadius: '99px',
-                marginTop: 'auto'
-              }}
-            >
-              {loading ? 'Verifying...' : 'Confirm'}
-            </button>
+              {/* Submit Button */}
+              <button
+                className={styles.confirmBtn}
+                onClick={handleSubmit}
+                disabled={pin.length !== 6 || loading}
+              >
+                {loading ? 'Verifying...' : 'Confirm'}
+              </button>
+            </div>
           </>
         )}
       </div>

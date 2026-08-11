@@ -1,0 +1,346 @@
+.kioskContainer {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: radial-gradient(circle at top, var(--muted) 0%, var(--background) 100%);
+  overflow-y: auto;
+  position: relative;
+  width: 100%;
+}
+
+.adminLink {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  color: var(--muted-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+}
+
+.adminLink:hover {
+  color: var(--foreground);
+  border-color: var(--foreground);
+  background-color: var(--muted);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.adminLink:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.kioskCard {
+  width: 100%;
+  max-width: 360px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* Split screen layout for tablets and desktops */
+@media (min-width: 768px) {
+  .kioskCard {
+    max-width: 720px;
+    flex-direction: row;
+    align-items: stretch;
+    padding: 3rem;
+    gap: 3rem;
+  }
+}
+
+.cameraSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .cameraSection {
+    flex: 1;
+    border-right: 1px solid var(--border);
+    padding-right: 3rem;
+  }
+}
+
+.cameraFrame {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background-color: var(--muted);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .cameraFrame {
+    width: 260px;
+    height: 195px; /* 4:3 Aspect Ratio */
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.videoElement {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cameraStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.cameraIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.entrySection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .entrySection {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 1.75rem;
+  }
+}
+
+.subtitle {
+  color: var(--muted-foreground);
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.errorBanner {
+  height: 28px;
+  margin-bottom: 0.75rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorMessage {
+  color: #ef4444;
+  font-weight: 500;
+  background-color: rgba(239, 68, 68, 0.08);
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.pinDisplay {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.pinDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background-color: transparent;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pinDotActive {
+  background-color: var(--foreground);
+  border-color: var(--foreground);
+  transform: scale(1.2);
+}
+
+.keypadGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.875rem;
+  width: 100%;
+  max-width: 260px; /* Reduced to make keypad compact */
+  margin-bottom: 1.5rem;
+}
+
+.keypadBtn {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 1.5rem; /* Balanced sizing */
+  font-weight: 300; /* iOS passcode aesthetic */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  user-select: none;
+  padding: 0;
+}
+
+.keypadBtn:active {
+  background-color: var(--muted);
+  transform: scale(0.92);
+}
+
+.textBtn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color 0.2s ease, transform 0.15s ease;
+  user-select: none;
+  padding: 0;
+}
+
+.textBtn:hover {
+  color: var(--foreground);
+}
+
+.textBtn:active {
+  transform: scale(0.95);
+}
+
+.confirmBtn {
+  width: 100%;
+  max-width: 260px; /* Perfectly aligned with keypad */
+  padding: 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 99px;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  transition: opacity 0.2s ease, transform 0.15s ease, background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.confirmBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.confirmBtn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* Success View Styles */
+.successContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 380px;
+  width: 100%;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.successIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  margin-bottom: 1.5rem;
+  animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.5); }
+  to { transform: scale(1); }
+}
+
+.successTitle {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}

@@ -8,7 +8,7 @@ interface Staff {
   name: string;
   phone_number: string;
   is_active: boolean;
-  shift_start_time: string;
+  target_duration_minutes: number;
 }
 
 export default function StaffManagement() {
@@ -23,7 +23,7 @@ export default function StaffManagement() {
   // Form State
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [shiftStart, setShiftStart] = useState('09:00');
+  const [targetHours, setTargetHours] = useState('8');
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -35,12 +35,7 @@ export default function StaffManagement() {
     setLoading(true);
     const { data, error } = await supabase.from('staff').select('*').order('created_at', { ascending: false });
     if (!error && data) {
-      // Postgres TIME type returns 'HH:MM:SS'. We need 'HH:MM' for input type="time"
-      const formattedData = data.map(s => ({
-         ...s,
-         shift_start_time: s.shift_start_time ? s.shift_start_time.substring(0, 5) : '09:00'
-      }));
-      setStaffList(formattedData);
+      setStaffList(data as Staff[]);
     }
     setLoading(false);
   };
@@ -48,7 +43,7 @@ export default function StaffManagement() {
   const resetForm = () => {
     setName('');
     setPhone('');
-    setShiftStart('09:00');
+    setTargetHours('8');
     setIsActive(true);
     setEditingStaff(null);
   };
@@ -67,7 +62,7 @@ export default function StaffManagement() {
     const { error } = await supabase.from('staff').insert({
       name,
       phone_number: phone,
-      shift_start_time: `${shiftStart}:00`,
+      target_duration_minutes: Math.round(parseFloat(targetHours) * 60) || 480,
       organization_id: orgData.id
     });
 
@@ -85,7 +80,7 @@ export default function StaffManagement() {
     setEditingStaff(staff);
     setName(staff.name);
     setPhone(staff.phone_number);
-    setShiftStart(staff.shift_start_time);
+    setTargetHours(((staff.target_duration_minutes || 480) / 60).toString());
     setIsActive(staff.is_active);
     setShowEditModal(true);
   };
@@ -98,7 +93,7 @@ export default function StaffManagement() {
     const { error } = await supabase.from('staff').update({
       name,
       phone_number: phone,
-      shift_start_time: `${shiftStart}:00`,
+      target_duration_minutes: Math.round(parseFloat(targetHours) * 60) || 480,
       is_active: isActive
     }).eq('id', editingStaff.id);
 
@@ -141,7 +136,7 @@ export default function StaffManagement() {
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Name</th>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Phone</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Shift Start</th>
+              <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Target Hours</th>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Status</th>
               <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--muted-foreground)', textAlign: 'right' }}>Actions</th>
             </tr>
@@ -155,8 +150,8 @@ export default function StaffManagement() {
               <tr key={staff.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td data-label="Name" style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{staff.name}</td>
                 <td data-label="Phone" className="col-half" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>{staff.phone_number}</td>
-                <td data-label="Shift Start" className="col-half" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
-                  {new Date(`1970-01-01T${staff.shift_start_time}:00`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                <td data-label="Target Hours" className="col-half" style={{ padding: '1rem 1.5rem', color: 'var(--muted-foreground)' }}>
+                  {((staff.target_duration_minutes || 480) / 60).toFixed(1)} hrs
                 </td>
                 <td data-label="Status" style={{ padding: '1rem 1.5rem' }}>
                   <span style={{ 
@@ -170,10 +165,10 @@ export default function StaffManagement() {
                     {staff.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="no-label" style={{ padding: '1rem 1.5rem', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
-                    <button onClick={() => openEditModal(staff)} style={{ flex: 1, backgroundColor: 'var(--muted)', padding: '0.5rem', borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.875rem', fontWeight: 500, textAlign: 'center' }}>Edit</button>
-                    <button onClick={() => handleDeleteStaff(staff.id, staff.name)} style={{ flex: 1, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: 'var(--radius)', color: '#ef4444', fontSize: '0.875rem', fontWeight: 500, textAlign: 'center' }}>Delete</button>
+                <td className="no-label" style={{ padding: '1rem 1.5rem' }}>
+                  <div className="action-buttons">
+                    <button className="action-btn" onClick={() => openEditModal(staff)} style={{ backgroundColor: 'var(--muted)', color: 'var(--foreground)' }}>Edit</button>
+                    <button className="action-btn" onClick={() => handleDeleteStaff(staff.id, staff.name)} style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>Delete</button>
                   </div>
                 </td>
               </tr>
@@ -196,8 +191,8 @@ export default function StaffManagement() {
                 <input type="tel" className="input-field" placeholder="+1 234 567 8900" value={phone} onChange={e => setPhone(e.target.value)} required />
               </div>
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Shift Start Time</label>
-                <input type="time" className="input-field" value={shiftStart} onChange={e => setShiftStart(e.target.value)} required />
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Daily Target (Hours)</label>
+                <input type="number" step="0.5" className="input-field" placeholder="8" value={targetHours} onChange={e => setTargetHours(e.target.value)} required />
               </div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowAddModal(false)} style={{ padding: '0.75rem 1rem', color: 'var(--muted-foreground)', fontWeight: 500 }}>Cancel</button>
@@ -224,8 +219,8 @@ export default function StaffManagement() {
                 <input type="tel" className="input-field" placeholder="+1 234 567 8900" value={phone} onChange={e => setPhone(e.target.value)} required />
               </div>
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Shift Start Time</label>
-                <input type="time" className="input-field" value={shiftStart} onChange={e => setShiftStart(e.target.value)} required />
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Daily Target (Hours)</label>
+                <input type="number" step="0.5" className="input-field" placeholder="8" value={targetHours} onChange={e => setTargetHours(e.target.value)} required />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <input type="checkbox" id="active-checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} style={{ width: '1rem', height: '1rem' }} />

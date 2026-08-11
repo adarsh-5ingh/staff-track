@@ -9,7 +9,7 @@ interface Log {
   check_out_time: string | null;
   photo_url: string | null;
   checkout_photo_url: string | null;
-  staff: { name: string, shift_start_time?: string };
+  staff: { name: string, target_duration_minutes?: number };
   date: string;
 }
 
@@ -24,7 +24,7 @@ export default function DashboardOverview() {
     totalStaff: 0, 
     checkedInToday: 0, 
     absent: 0,
-    lateToday: 0
+    activeNow: 0
   });
   const [recentLogs, setRecentLogs] = useState<Log[]>([]);
   const [dailyPins, setDailyPins] = useState<DailyPin[]>([]);
@@ -50,26 +50,24 @@ export default function DashboardOverview() {
       // 2. Get today's check-ins
       const { data: logs, count: checkedInCount } = await supabase
         .from('time_logs')
-        .select('id, check_in_time, check_out_time, photo_url, checkout_photo_url, staff(name, shift_start_time), date', { count: 'exact' })
+        .select('id, check_in_time, check_out_time, photo_url, checkout_photo_url, staff(name, target_duration_minutes), date', { count: 'exact' })
         .eq('date', today)
         .order('check_in_time', { ascending: false });
 
       const todayLogs = (logs as any) || [];
 
-      // Calculate Late
-      let lateCount = 0;
+      // Calculate Active Now
+      let activeCount = 0;
 
       todayLogs.forEach((log: Log) => {
-        const timeStr = new Date(log.check_in_time).toTimeString().split(' ')[0];
-        const staffShiftStart = log.staff?.shift_start_time || '09:00:00';
-        if (timeStr > staffShiftStart) lateCount++;
+        if (!log.check_out_time) activeCount++;
       });
 
       setStats({
         totalStaff: staffCount || 0,
         checkedInToday: checkedInCount || 0,
         absent: (staffCount || 0) - (checkedInCount || 0),
-        lateToday: lateCount
+        activeNow: activeCount
       });
       
       setRecentLogs(todayLogs);
@@ -150,7 +148,7 @@ export default function DashboardOverview() {
         </div>
         <div className="glass-panel" style={{ padding: '1.5rem', backgroundColor: 'var(--background)' }}>
           <h3 style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>Checked In Today</h3>
-          <p style={{ fontSize: '2rem', fontWeight: 600 }}>{stats.checkedInToday} <span style={{fontSize: '1rem', color: '#ef4444', fontWeight: 400}}>({stats.lateToday} Late)</span></p>
+          <p style={{ fontSize: '2rem', fontWeight: 600 }}>{stats.checkedInToday} <span style={{fontSize: '1rem', color: '#10b981', fontWeight: 400}}>({stats.activeNow} Active Now)</span></p>
         </div>
       </div>
 
