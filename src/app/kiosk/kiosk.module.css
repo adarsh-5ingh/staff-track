@@ -344,3 +344,131 @@
   line-height: 1.4;
   margin-bottom: 0.5rem;
 }
+
+/* Exit Passcode Modal Styles */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+
+.modalContent {
+  width: 90%;
+  max-width: 320px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+.modalContentShake {
+  animation: modalShake 0.4s ease;
+}
+
+@keyframes modalShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  text-align: center;
+  color: var(--foreground);
+}
+
+.modalSubtitle {
+  color: var(--muted-foreground);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.modalPinDisplay {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.modalPinDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background-color: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modalPinDotActive {
+  background-color: var(--foreground);
+  border-color: var(--foreground);
+  transform: scale(1.15);
+}
+
+.modalPinDotError {
+  background-color: #ef4444;
+  border-color: #ef4444;
+}
+
+.modalKeypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 220px;
+  margin-bottom: 1.5rem;
+}
+
+.modalKeypadBtn {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 1.25rem;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  user-select: none;
+  padding: 0;
+}
+
+.modalKeypadBtn:active {
+  background-color: var(--muted);
+  transform: scale(0.92);
+}
+
+.modalCloseBtn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.modalCloseBtn:hover {
+  color: var(--foreground);
+}
+
+.modalCloseBtn:active {
+  transform: scale(0.95);
+}

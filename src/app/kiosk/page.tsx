@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import styles from './kiosk.module.css';
 
 export default function Kiosk() {
@@ -9,6 +10,75 @@ export default function Kiosk() {
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Exit passcode state
+  const [correctPasscode, setCorrectPasscode] = useState('1234');
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminPin, setAdminPin] = useState('');
+  const [adminError, setAdminError] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
+
+  // Fetch Exit Passcode from Database on mount if logged in
+  useEffect(() => {
+    const fetchExitPasscode = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setHasSession(true);
+          // Get admin org
+          const { data: adminData } = await supabase
+            .from('admins')
+            .select('organization_id')
+            .eq('id', session.user.id)
+            .single();
+
+          if (adminData?.organization_id) {
+            const { data: orgData } = await supabase
+              .from('organizations')
+              .select('kiosk_passcode')
+              .eq('id', adminData.organization_id)
+              .single();
+
+            if (orgData?.kiosk_passcode) {
+              setCorrectPasscode(orgData.kiosk_passcode);
+            }
+          }
+        } else {
+          setHasSession(false);
+        }
+      } catch (err) {
+        console.error('Failed to fetch kiosk exit passcode:', err);
+      }
+    };
+    fetchExitPasscode();
+  }, []);
+
+  // Validate exit passcode once 4 digits are entered
+  useEffect(() => {
+    if (adminPin.length === 4) {
+      if (adminPin === correctPasscode) {
+        window.location.href = '/dashboard';
+      } else {
+        setAdminError(true);
+        setTimeout(() => {
+          setAdminPin('');
+          setAdminError(false);
+        }, 800); // Shaking animation duration match
+      }
+    }
+  }, [adminPin, correctPasscode]);
+
+  const handleAdminNumberClick = (num: string) => {
+    if (adminPin.length < 4 && !adminError) {
+      setAdminPin(prev => prev + num);
+    }
+  };
+
+  const handleAdminDelete = () => {
+    if (!adminError) {
+      setAdminPin(prev => prev.slice(0, -1));
+    }
+  };
 
   // Initialize Camera
   useEffect(() => {
@@ -103,7 +173,19 @@ export default function Kiosk() {
 
   return (
     <div className={styles.kioskContainer}>
-      <a href="/dashboard" className={styles.adminLink} title="Admin Dashboard" aria-label="Admin Dashboard">
+      <a 
+        href="/dashboard" 
+        className={styles.adminLink} 
+        title="Admin Dashboard" 
+        aria-label="Admin Dashboard"
+        onClick={(e) => {
+          if (hasSession) {
+            e.preventDefault();
+            setAdminPin('');
+            setShowAdminModal(true);
+          }
+        }}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -194,6 +276,57 @@ export default function Kiosk() {
           </>
         )}
       </div>
+
+      {showAdminModal && (
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.modalContent} ${adminError ? styles.modalContentShake : ''}`}>
+            <h3 className={styles.modalTitle}>Admin Verification</h3>
+            <p className={styles.modalSubtitle}>Enter 4-digit passcode to exit kiosk.</p>
+            
+            <div className={styles.modalPinDisplay}>
+              {[0, 1, 2, 3].map((index) => (
+                <div 
+                  key={index} 
+                  className={`${styles.modalPinDot} ${index < adminPin.length ? styles.modalPinDotActive : ''} ${adminError ? styles.modalPinDotError : ''}`}
+                />
+              ))}
+            </div>
+
+            <div className={styles.modalKeypad}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <button 
+                  key={num} 
+                  onClick={() => handleAdminNumberClick(num.toString())} 
+                  className={styles.modalKeypadBtn}
+                >
+                  {num}
+                </button>
+              ))}
+              <button 
+                onClick={() => {
+                  setShowAdminModal(false);
+                  setAdminPin('');
+                }} 
+                className={styles.modalCloseBtn}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => handleAdminNumberClick('0')} 
+                className={styles.modalKeypadBtn}
+              >
+                0
+              </button>
+              <button 
+                onClick={handleAdminDelete} 
+                className={styles.modalCloseBtn}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
