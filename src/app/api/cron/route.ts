@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
+import { getTodayDateString } from '@/lib/date';
 
 // Helper to generate a 6-digit PIN
 const generatePin = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'No active staff found for processing.' });
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
 
     // Check for staff currently on leave today
     const { data: activeLeaves } = await supabase

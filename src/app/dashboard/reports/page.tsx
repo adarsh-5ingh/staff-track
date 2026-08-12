@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getTodayDateString } from '@/lib/date';
 
 interface TimeLog {
   id: string;
@@ -13,7 +14,7 @@ interface TimeLog {
 }
 
 export default function ReportsView() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDateString();
   const [dateStr, setDateStr] = useState(today);
   const [logs, setLogs] = useState<TimeLog[]>([]);
   const [loading, setLoading] = useState(false);

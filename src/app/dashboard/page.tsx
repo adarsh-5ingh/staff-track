@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getTodayDateString } from '@/lib/date';
 
 interface Log {
   id: string;
@@ -39,7 +40,7 @@ export default function DashboardOverview() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayDateString();
       
       // 1. Get total active staff
       const { count: staffCount } = await supabase
@@ -116,7 +117,7 @@ export default function DashboardOverview() {
     
     // DB update
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayDateString();
       await supabase
         .from('daily_pins')
         .update({ is_sent: true })

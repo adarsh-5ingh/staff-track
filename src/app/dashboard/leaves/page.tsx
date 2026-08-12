@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getTodayDateString } from '@/lib/date';
 
 interface Leave {
   id: string;
@@ -96,7 +97,7 @@ export default function LeavesManagement() {
   };
 
   const isCurrentlyOnLeave = (start: string, end: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     return today >= start && today <= end;
   };
 

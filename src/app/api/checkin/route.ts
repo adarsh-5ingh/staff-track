@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
+import { getTodayDateString } from '@/lib/date';
 
 export async function POST(request: Request) {
   try {
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = getServiceSupabase();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
 
     // 1. Verify PIN and get staff details
     const { data: pinData, error: pinError } = await supabase
